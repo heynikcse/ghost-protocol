@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
+// 🔗 Connect to backend (IMPORTANT: replace with your deployed URL)
 const socket = io("https://ghost-protocol-tpwp.onrender.com");
 
 export default function App() {
@@ -8,30 +9,34 @@ export default function App() {
   const [input, setInput] = useState("");
   const [username] = useState("Ghost_" + Math.floor(Math.random() * 1000));
   const [reactions, setReactions] = useState({});
+  const [activeUsers, setActiveUsers] = useState(0);
 
   const bottomRef = useRef();
 
-  // Auto scroll
+  // 📡 Socket listeners
   useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    socket.on("all_messages", (msgs) => setMessages(msgs));
+    socket.on("active_users", (count) => setActiveUsers(count));
+
+    return () => {
+      socket.off("all_messages");
+      socket.off("active_users");
+    };
+  }, []);
+
+  // ⏬ Auto-scroll
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Live countdown refresh
+  // ⏳ Re-render for timer
   const [, setTick] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Socket listener
-  useEffect(() => {
-    socket.on("all_messages", (msgs) => setMessages(msgs));
-    return () => socket.off("all_messages");
-  }, []);
-
-  // Send message
+  // ✉️ Send message
   const sendMessage = () => {
     if (!input.trim()) return;
     socket.emit("chat_message", { user: username, text: input });
@@ -42,12 +47,12 @@ export default function App() {
     if (e.key === "Enter") sendMessage();
   };
 
-  // Timer
+  // ⏱ Timer
   const getSecondsLeft = (timestamp) => {
     return Math.max(0, Math.floor(120 - (Date.now() - timestamp) / 1000));
   };
 
-  // Add reaction safely
+  // ❤️ Add reaction
   const addReaction = (index, emoji) => {
     setReactions(prev => {
       const current = prev[index] || [];
@@ -59,107 +64,103 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="h-screen flex flex-col text-white">
 
-    {/* Top Bar */}
-    <div className="flex items-center justify-between p-4 border-b border-gray-800">
-      <h1
-        className="text-2xl md:text-3xl font-bold tracking-wider 
-        bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 
-        bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(255,0,150,0.5)]"
-        style={{ fontFamily: "Orbitron, sans-serif" }}
-      >
-        GHOST PROTOCOL
-      </h1>
-      <span
-        className="text-xs px-3 py-1 rounded-full 
-        bg-gray-800 text-gray-300 border border-gray-700 
-        tracking-wide"
-        style={{ fontFamily: "Orbitron, sans-serif" }}
-      >
-        Anonymous Mode
-      </span>
-    </div>
+      {/* 🔥 HEADER */}
+      <div className="flex justify-between items-center p-4 border-b border-gray-800">
 
-    {/* Empty State */}
-    {messages.length === 0 && (
-      <div className="flex-1 flex items-center justify-center text-3xl text-gray-500 font-light">
-        Start something anonymous 👀
+        <h1 className="neon-title text-2xl font-bold">
+          👻 GHOST PROTOCOL
+        </h1>
+
+        <div className="flex items-center gap-2 text-sm">
+          <div className="pulse-dot"></div>
+          <span className="text-green-400 font-semibold">
+            {activeUsers} ONLINE
+          </span>
+        </div>
+
       </div>
-    )}
 
-    {/* Messages */}
-    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-      {messages.map((msg, i) => {
-        const isMe = msg.user === username;
-        const secondsLeft = getSecondsLeft(msg.timestamp);
+      {/* 👻 EMPTY STATE */}
+      {messages.length === 0 && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+          <div className="text-6xl animate-bounce">👻</div>
+          <h2 className="neon-title text-3xl">ENTER THE VOID</h2>
+        </div>
+      )}
 
-        return (
-          <div key={i}>
+      {/* 💬 MESSAGES */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
-            {/* Chat Row */}
-            <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`max-w-[70%] px-4 py-3 rounded-2xl text-sm shadow-lg
-                ${isMe
-                  ? "bg-gradient-to-r from-pink-500 to-yellow-500 text-black"
-                  : "bg-gray-900 border border-gray-700 text-white"}`}
-              >
-                {msg.text}
+        {messages.map((msg, i) => {
+          const isMe = msg.user === username;
+          const secondsLeft = getSecondsLeft(msg.timestamp);
 
-                <div className="text-xs mt-1 opacity-70">
-                  {secondsLeft}s
+          return (
+            <div key={i}>
+
+              {/* Message */}
+              <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`px-4 py-3 rounded-xl max-w-[70%] text-sm
+                  ${isMe ? "neon-msg-me" : "neon-msg-other"}`}
+                >
+                  <div>{msg.text}</div>
+
+                  <div className="text-xs mt-1 text-gray-400">
+                    ⏱ {secondsLeft}s
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Reactions OUTSIDE */}
-            <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} mt-1`}>
-
-              {/* Emoji display */}
-              <div className="flex gap-2 text-sm">
+              {/* ❤️ Reactions */}
+              <div className={`flex ${isMe ? "justify-end" : "justify-start"} gap-2 mt-1`}>
                 {(reactions[i] || []).map((r, idx) => (
                   <span key={idx}>{r}</span>
                 ))}
               </div>
 
-              {/* Reaction buttons */}
-              <div className="flex gap-2 text-sm mt-1 opacity-60 hover:opacity-100 transition">
-                <button onClick={() => addReaction(i, "❤️")}>❤️</button>
-                <button onClick={() => addReaction(i, "🔥")}>🔥</button>
-                <button onClick={() => addReaction(i, "😂")}>😂</button>
+              {/* 🔥 Reaction Buttons */}
+              <div className={`flex ${isMe ? "justify-end" : "justify-start"} gap-2 mt-1`}>
+                {["❤️","🔥","😂","👻","⚡"].map((emoji, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => addReaction(i, emoji)}
+                    className="hover:scale-125 transition"
+                  >
+                    {emoji}
+                  </button>
+                ))}
               </div>
 
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
 
-      <div ref={bottomRef}></div>
-    </div>
+        <div ref={bottomRef}></div>
+      </div>
 
-    {/* Input */}
-    <div className="p-4 border-t border-gray-800">
-      <div className="flex items-center gap-2 bg-gray-900 rounded-full px-4 py-2">
+      {/* ✍️ INPUT */}
+      <div className="p-4 flex gap-2 border-t border-gray-800">
 
         <input
-          className="flex-1 bg-transparent outline-none text-white placeholder-gray-400"
+          className="flex-1 px-4 py-2 rounded-full neon-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Message..."
+          placeholder="Type your message into the void..."
         />
 
         <button
           onClick={sendMessage}
-          className="bg-gradient-to-r from-pink-500 to-yellow-500 text-black px-4 py-1 rounded-full font-semibold hover:scale-105 transition"
+          className="neon-btn px-5 rounded-full font-bold"
         >
           Send
         </button>
 
       </div>
-    </div>
 
-  </div>
+    </div>
   );
 }

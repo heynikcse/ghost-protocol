@@ -15,6 +15,12 @@
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
+    /* 🔥 NEON COLORS */
+  --neon-cyan: #00ffff;
+  --neon-magenta: #ff00ff;
+  --neon-green: #00ff00;
+  --neon-bg: #000000;
+
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
   color-scheme: light dark;
@@ -108,4 +114,79 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+}
+
+body {
+  background: black;
+  overflow-x: hidden;
+}
+
+/* 🌐 GRID EFFECT */
+body::before {
+  content: "";
+  position: fixed;
+  width: 200%;
+  height: 200%;
+  background-image:
+    linear-gradient(rgba(0,255,255,0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,0,255,0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: gridMove 20s linear infinite;
+  z-index: -2;
+}
+
+@keyframes gridMove {
+  from { transform: translate(0,0); }
+  to { transform: translate(-50px,-50px); }
+}
+
+.neon-title {
+  color: white;
+  text-shadow:
+    0 0 10px var(--neon-cyan),
+    0 0 20px var(--neon-cyan),
+    0 0 40px var(--neon-magenta);
+  letter-spacing: 2px;
+}
+
+.neon-msg-me {
+  border: 1px solid var(--neon-magenta);
+  box-shadow: 0 0 15px var(--neon-magenta);
+}
+
+.neon-msg-other {
+  border: 1px solid var(--neon-cyan);
+  box-shadow: 0 0 15px var(--neon-cyan);
+}
+
+.neon-input {
+  border: 1px solid var(--neon-cyan);
+  box-shadow: 0 0 10px var(--neon-cyan);
+  background: black;
+  color: white;
+}
+
+.neon-btn {
+  background: linear-gradient(45deg, var(--neon-magenta), var(--neon-cyan));
+  box-shadow: 0 0 20px var(--neon-magenta), 0 0 40px var(--neon-cyan);
+  transition: 0.3s;
+}
+
+.neon-btn:hover {
+  transform: scale(1.05);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--neon-green);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--neon-green);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
 }
